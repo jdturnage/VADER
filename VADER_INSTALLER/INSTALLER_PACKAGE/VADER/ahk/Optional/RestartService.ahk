@@ -35,17 +35,17 @@ Loop
 			WinKill, XBMC
 			Sleep 5000
 			IfExist,%XBMC_EXE%
-				Run %XBMC_EXE%
+				Run %XBMC_EXE% -p
 			IfNotExist,%XBMC_EXE%
-				Run %XBMC_EXE2%
+				Run %XBMC_EXE2% -p
 			;Run %XBMC_EXE%
 		}
 		Else
 		{
 			IfExist,%XBMC_EXE%
-				Run %XBMC_EXE%
+				Run %XBMC_EXE% -p
 			IfNotExist,%XBMC_EXE%
-				Run %XBMC_EXE2%
+				Run %XBMC_EXE2% -p
 			;Run %XBMC_EXE%
 		}
 	}
