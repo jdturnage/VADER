@@ -1,11 +1,9 @@
 ﻿temp1 	 := 0
 temp2 	 := 0
 URL 	 := "127.0.0.1:8000/counter"
-XBMC_EXE     = C:\\Program Files (x86)\\XBMC\\XBMC.exe
-XBMC_EXE2	 = C:\\Program Files\\XBMC\\XBMC.exe
 
-;XBMC_Path    = C:\\Program Files (x86)\\XBMC
-;XBMC_Path2    = C:\\Program Files\\XBMC
+XBMC_EXE = C:\\XBMC\\XBMC.exe
+XBMC_EXE2 = C:\\XBMC\\XBMC.exe
 
 XBMC_imgName = XBMC.exe
 

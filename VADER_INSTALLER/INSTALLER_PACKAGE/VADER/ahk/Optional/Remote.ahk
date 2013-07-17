@@ -38,7 +38,7 @@ Volume_Mute::
 Home::
 	IfWinNotExist, XBMC
 	{
-		Run "C:\\Program Files\\XBMC\\XBMC.exe"
+		Run "C:\\XBMC\\XBMC.exe" -p
 		Sleep 5000
 	}
 	

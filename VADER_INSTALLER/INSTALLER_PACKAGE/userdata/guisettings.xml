@@ -110,7 +110,7 @@
         </musicfiles>
     </viewstates>
     <general>
-        <systemtotaluptime>20212</systemtotaluptime>
+        <systemtotaluptime>20317</systemtotaluptime>
         <addonautoupdate>true</addonautoupdate>
         <addonnotifications>true</addonnotifications>
         <addonforeignfilter>false</addonforeignfilter>
@@ -454,7 +454,7 @@
         <guicalibration></guicalibration>
         <resolution>16</resolution>
         <screen>0</screen>
-        <screenmode>WINDOW</screenmode>
+        <screenmode>DESKTOP</screenmode>
         <vsync>2</vsync>
     </videoscreen>
     <weather>
@@ -856,7 +856,7 @@
         <setting type="string" name="skin.aeon.nox.CustomSub7_5.Disable">1</setting>
         <setting type="string" name="skin.aeon.nox.CustomHomeItem1.Disable"></setting>
         <setting type="string" name="skin.aeon.nox.CustomHomeItem2.Disable"></setting>
-        <setting type="string" name="skin.aeon.nox.CustomHomeItem3.Disable"></setting>
+        <setting type="string" name="skin.aeon.nox.CustomHomeItem3.Disable">1</setting>
         <setting type="string" name="skin.aeon.nox.CustomHomeItem4.Disable">1</setting>
         <setting type="string" name="skin.aeon.nox.CustomHomeItem5.Disable">1</setting>
         <setting type="string" name="skin.aeon.nox.CustomHomeItem6.Disable">1</setting>
@@ -899,7 +899,7 @@
         <setting type="string" name="skin.aeon.nox.TVShowHomeItem.Disable"></setting>
         <setting type="string" name="skin.aeon.nox.LiveTVHomeItem.Disable"></setting>
         <setting type="string" name="skin.aeon.nox.TVGuideHomeItem.Disable"></setting>
-        <setting type="string" name="skin.aeon.nox.FeaturedHomeItem.Disable"></setting>
+        <setting type="string" name="skin.aeon.nox.FeaturedHomeItem.Disable">1</setting>
         <setting type="string" name="skin.aeon.nox.VideosHomeItem.Disable">1</setting>
         <setting type="string" name="skin.aeon.nox.ProgramsHomeItem.Disable">1</setting>
         <setting type="string" name="skin.aeon.nox.SettingsHomeItem.Disable">1</setting>
@@ -910,9 +910,9 @@
         <setting type="string" name="skin.aeon.nox.widgetlist"></setting>
         <setting type="string" name="skin.aeon.nox.widget2list"></setting>
         <setting type="string" name="skin.aeon.nox.ItemToEdit.Widget"></setting>
-        <setting type="string" name="skin.aeon.nox.ItemToEdit.MultiFanart">C:\VADER\Backgrounds\IPTV\</setting>
+        <setting type="string" name="skin.aeon.nox.ItemToEdit.MultiFanart">C:\VADER\Backgrounds\Mimio\</setting>
         <setting type="string" name="skin.aeon.nox.ItemToEdit.Widget2"></setting>
-        <setting type="string" name="skin.aeon.nox.ItemToEdit.InfoLine">PVR</setting>
+        <setting type="string" name="skin.aeon.nox.ItemToEdit.InfoLine">custom1</setting>
         <setting type="string" name="skin.aeon.nox.ItemToEdit.SubMenu">none</setting>
         <setting type="string" name="skin.aeon.nox.WeatherFanartDir"></setting>
         <setting type="string" name="skin.aeon.nox.LiveBG"></setting>
@@ -1445,11 +1445,11 @@
         <setting type="string" name="skin.aeon.nox.CustomHomeItem6.Icon">special://skin/extras/BigIcons/Television.png</setting>
         <setting type="string" name="skin.aeon.nox.CustomHomeItem6.Type">custom</setting>
         <setting type="string" name="skin.aeon.nox.CustomHomeItem6.Path">ActivateWindow(Videos,TVShowTitles,return)</setting>
-        <setting type="string" name="skin.aeon.nox.ItemToEdit.Label">IPTV</setting>
-        <setting type="string" name="skin.aeon.nox.ItemToEdit.Icon">special://skin/extras/BigIcons/Monitor.png</setting>
-        <setting type="string" name="skin.aeon.nox.ItemToEdit.Disable"></setting>
-        <setting type="string" name="skin.aeon.nox.ItemToEdit.Type">custom</setting>
-        <setting type="string" name="skin.aeon.nox.ItemToEdit.Path">ActivateWindowAndFocus(PVR, 32,0, 11,0)</setting>
+        <setting type="string" name="skin.aeon.nox.ItemToEdit.Label">MIMIO</setting>
+        <setting type="string" name="skin.aeon.nox.ItemToEdit.Icon">special://skin/extras/BigIcons/Question.png</setting>
+        <setting type="string" name="skin.aeon.nox.ItemToEdit.Disable">1</setting>
+        <setting type="string" name="skin.aeon.nox.ItemToEdit.Type">7</setting>
+        <setting type="string" name="skin.aeon.nox.ItemToEdit.Path">RunScript(C:\vaderScripts\mococenSerial\open-MIMIO.py)</setting>
         <setting type="string" name="skin.aeon.nox.MusicBackground"></setting>
         <setting type="string" name="skin.aeon.nox.ComicsBackground"></setting>
         <setting type="string" name="skin.aeon.nox.PicturesBackground"></setting>
