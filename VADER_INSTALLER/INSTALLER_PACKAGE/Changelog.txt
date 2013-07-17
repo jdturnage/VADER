@@ -1,0 +1,12 @@
+*****VADER 2.1******
+********************
+
+1.Installer now installs all files directly into C:\ drive instead of Program Files.
+
+2.The profile data that XBMC is using is now pulling from a portable directory found within XBMC folder in C:\ drive.
+
+3.A new shortcut has been added to the start menu called "VADER-XBMC"
+
+4.The Restart Service executable now restarts XBMC without any kind of permission issues.
+
+5.Added the missing file keyboard.xml that enables color button functions on MOtorolla Nyxboard remote.
