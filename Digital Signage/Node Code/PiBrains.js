@@ -1,7 +1,8 @@
 var http = require('http'); 
-var fs = require("fs"); 
-var sqlite3 = require("sqlite3").verbose(); 
+var fs = require('fs'); 
+var sqlite3 = require('sqlite3').verbose(); 
 var mkdirp = require('mkdirp');
+var path = require('path');
 var file = "test10.db";
 var piChunk = '';
 var body = '';
@@ -9,7 +10,7 @@ var db = new sqlite3.Database(file);
 var exists = fs.existsSync(file);
 var ORG_ROOT = "/media/piFilling/Org"
 var LOC_ROOT = "/media/piFilling/Location"  
-var PIFOLDERS_ROOT = "/root/piFolders/"    //this holds the folders with the symlinks the pi accesses
+var PIFOLDERS_ROOT = "/media/piFolders/"    //this holds the folders with the symlinks the pi accesses
 var SMB_MNT_ROOT = "smb://10.128.1.137/piFolders" 
 
    //create the database if it has not been created 
@@ -22,18 +23,24 @@ var SMB_MNT_ROOT = "smb://10.128.1.137/piFolders"
 	  db.run("CREATE TABLE IF NOT EXISTS Pidentities (timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT)"); 
     } 
 
-function createNewFolder(piDee)
+function createNewFolder(piDee, org, loc)
 {
    mkdirp(PIFOLDERS_ROOT + piDee, function (err) {
     if (err) console.error(err)
     else console.log('pow!')
 	db.run("UPDATE Pidentities SET filelink = '" + SMB_MNT_ROOT + "/" + piDee + "' WHERE rowid = " + piDee);
+	populateFolder(org, loc, piDee);	
+	//put in NASA Meatball
+	fs.symlink("/media/piFilling/nasameatball.png", PIFOLDERS_ROOT + path.sep + piDee + path.sep + "nasameatball.png", 'file', function(err){
+	   if (err) console.error(err)
+	   });
    });
 }	
 
-function traverseFolders(traverseBy, piFolder, target)
+function traverseFolders(traverseBy, piDee, target)
 {
    var thisRoot = '';
+   var targetLocation = '';
    
    if(traverseBy == "org")
 	{
@@ -43,26 +50,41 @@ function traverseFolders(traverseBy, piFolder, target)
 	{
 	   thisRoot = LOC_ROOT;
 	}
-    
-   //traverse down
-   // find location
-   //targetLocation is a result of walking down
-   // start traversing back up -> piLink is saved
+    console.log("Traversing by " + thisRoot);
 	
-   while( targetLocation != thisRoot  )   //walking back up
-    {
-      // piLink for each folder is saved until we are back to the root.
-      // write this link to the folder?
-      targetLocation = path.normalize(targetLocation + path.sep + "..");
-	}
+	var finder = require('findit2').find(thisRoot);  
+    
+	finder.on('directory', function(dir, stat){
+      console.log("inside the finder callback: " + dir, target)	  
+	  if(path.basename(dir) == target)
+	   {
+	     targetLocation = dir;
+		 console.log("Matched with the : " + dir);
+		 while( targetLocation != thisRoot  )  
+          {
+			console.log("Inside the walk up" + targetLocation);
+			fs.symlink(targetLocation, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(targetLocation), 'dir', function(err){
+			   if (err) console.error(err);
+			 });
+			 targetLocation = path.normalize(targetLocation + path.sep + "..");
+			 //targetLocation = thisRoot;	
+		  }
+  	    }
+	}); 
+   
+   //targetLocation is a result of walking down
+   console.log("Before Walking back up");
+   //walking back up
 
 }
 
-function populateFolder(piFolder, org, location, piDee)
+function populateFolder(org, location, piDee)
 {
   // delete all the links
-  // traverseFolder(“org”, piFolder, org)
-  // traverseFolder(“loc”, piFolder, location)
+  console.log("Traversing the org folders");
+  traverseFolders('org', piDee, org)
+  console.log("Traversing the location folders");
+  traverseFolders('loc', piDee, location)
 }
 
 	
@@ -194,7 +216,8 @@ function createPidentity(loc, org, piDee, piip)
 				console.log("inside");
 				console.log(piDee);
 				sendpiDeeSetting(piip, piDee);
-				createNewFolder(piDee);    
+				createNewFolder(piDee, org, loc); 
+				
             });
    
 		//stmt.run();
