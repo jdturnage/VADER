@@ -30,7 +30,10 @@ __resource__   = xbmc.translatePath( os.path.join( __cwd__, 'resources', 'lib' )
 
 #sys.path.append(__resource__)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2be2833fd14da3129a5fa42bfa4754f801de5419
 def watchdog():
     while (not xbmc.abortRequested):
         if (xbmc.Player().isPlaying()):
@@ -41,20 +44,27 @@ def watchdog():
             xbmc.Player().play('C:\\Wildlife.wmv')
     time.sleep(30)
 
+<<<<<<< HEAD
     
 
 class MyClass:
     print 'CAPTAIN MURPHY'
+=======
+>>>>>>> 2be2833fd14da3129a5fa42bfa4754f801de5419
 
     xbmc.Player().play('C:\\Wildlife.wmv')
 #Standard setup of main
 if (__name__ == "__main__"):
     xbmc.log('Version %s started' % __addonversion__)
     print "Digital Signage add-on is active"
+<<<<<<< HEAD
     MyClass()
     xbmc.executebuiltin("Notification(BIZARRO,IM HELPING!!!)")
     watchdog()
     
+=======
+ 
+>>>>>>> 2be2833fd14da3129a5fa42bfa4754f801de5419
     #gather information such as Pi IP Address and settings information from addon
     piip = socket.gethostbyname(socket.gethostname())
     location = __addon__.getSetting("Location")
@@ -72,6 +82,7 @@ if (__name__ == "__main__"):
     print simplejson.dumps(pidentity)
     response = urllib2.urlopen(req, simplejson.dumps(pidentity))
     print response
+<<<<<<< HEAD
     time.sleep(5)
     
     
@@ -79,9 +90,20 @@ if (__name__ == "__main__"):
     
     
     # #Emergency Alert
+=======
+	#time.sleep(5)
+	
+    #watchdog()
+ 
+    # Emergency Alert
+>>>>>>> 2be2833fd14da3129a5fa42bfa4754f801de5419
     # req2 = urllib2.Request('http://192.168.126.128:8080')
     # req2.add_header('Content-Type','application/html')
     # print 'BANANA'
     # response2 = urllib2.urlopen(req2, 'GOOBER')
+<<<<<<< HEAD
     # print response2
 
+=======
+    # print response2
+>>>>>>> 2be2833fd14da3129a5fa42bfa4754f801de5419

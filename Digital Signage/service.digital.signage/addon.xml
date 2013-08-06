@@ -5,7 +5,11 @@
         <import addon="xbmc.python" version="2.1.0"/>
         <import addon="script.module.simplejson" version="2.0.10"/>
     </requires>
+<<<<<<< HEAD
 	<!--<extension point="xbmc.python.script" library="executor.py" >
+=======
+	<extension point="xbmc.python.script" library="savingpidee.py" >
+>>>>>>> 2be2833fd14da3129a5fa42bfa4754f801de5419
         <provides>executable</provides>
     </extension> -->
     <extension point="xbmc.service" library="digitalsignage.py" start="login"/>
