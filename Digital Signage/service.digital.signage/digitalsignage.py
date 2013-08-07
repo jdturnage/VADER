@@ -35,11 +35,11 @@ def watchdog():
     while (not xbmc.abortRequested):
         if (xbmc.Player().isPlaying()):
             print 'VIDEO IS PLAYING'
-            time.sleep(5)
+            time.sleep(60)
         else:
             print 'NO MEDIA IS PLAYING...REDO PIDENTITIES'
-            xbmc.Player().play('C:\\Wildlife.wmv')
-    time.sleep(30)
+            #xbmc.Player().play('')
+            time.sleep(60)
 
     
 
@@ -51,15 +51,21 @@ class MyClass:
 if (__name__ == "__main__"):
     xbmc.log('Version %s started' % __addonversion__)
     print "Digital Signage add-on is active"
+<<<<<<< HEAD
     MyClass()
     xbmc.executebuiltin("Notification(BIZARRO,IM HELPING!!!)")
     #watchdog()
     
+=======
+    time.sleep(10)
+>>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503
     #gather information such as Pi IP Address and settings information from addon
-    piip = socket.gethostbyname(socket.gethostname())
+    #piip = socket.gethostbyname(socket.getfqdn())
+    piip = xbmc.getIPAddress()
     location = __addon__.getSetting("Location")
     org = __addon__.getSetting("Org")
     piDee = __addon__.getSetting("PiDee")
+    ServerIP = __addon__.getSetting("ServerIP")
     
     pidentity = {'location' : location, 'org' : org, 'piip' : piip, 'piDee' : piDee}
     
@@ -67,13 +73,24 @@ if (__name__ == "__main__"):
     
     print data
      
+<<<<<<< HEAD
     req = urllib2.Request('http://192.168.126.128:8123')
+=======
+    req = urllib2.Request('http://' + ServerIP + ':8124')
+>>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503
     req.add_header('Content-Type', 'application/json')
     print simplejson.dumps(pidentity)
     response = urllib2.urlopen(req, simplejson.dumps(pidentity))
     print response
+<<<<<<< HEAD
     time.sleep(5)
     
     #watchdog()
     #Watchdog
     
+=======
+    time.sleep(60)
+    
+    watchdog()
+ 
+>>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503

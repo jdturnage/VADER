@@ -1,44 +1,31 @@
 var http = require('http'); 
-<<<<<<< HEAD
-var fs = require("fs"); 
-var util=require('util');
-var querystring=require('querystring');
-var sqlite3 = require("sqlite3").verbose(); 
-var file = "test9.db";
-=======
 var fs = require('fs'); 
 var sqlite3 = require('sqlite3').verbose(); 
 var mkdirp = require('mkdirp');
 var path = require('path');
 var file = "test10.db";
->>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503
 var piChunk = '';
 var body = '';
 var db = new sqlite3.Database(file);
 var exists = fs.existsSync(file);
-<<<<<<< HEAD
-=======
 var ORG_ROOT = "/media/piFilling/Org"
 var LOC_ROOT = "/media/piFilling/Location"  
-var PIFOLDERS_ROOT = "/media/piFolders/"    //this holds the folders with the symlinks the pi accesses
+var PIFOLDERS_ROOT = "/media/piFolders"    //this holds the folders with the symlinks the pi accesses
 var SMB_MNT_ROOT = "smb://10.128.1.137/piFolders" 
->>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503
 
    //create the database if it has not been created 
-	if(!exists)
+   if(!exists)
     {
       //create Pidentities db file
       console.log("Creating Pidentities Database."); 
       fs.openSync(file, "w"); 
       //create Pidentities table
-	  db.run("CREATE TABLE IF NOT EXISTS Pidentities (PiD ROWID, timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT)"); 
+	  db.run("CREATE TABLE IF NOT EXISTS Pidentities (timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT)"); 
     } 
-<<<<<<< HEAD
-=======
 
 function createNewFolder(piDee, org, loc)
 {
-   mkdirp(PIFOLDERS_ROOT + piDee, function (err) {
+   mkdirp(PIFOLDERS_ROOT + path.sep + piDee, function (err) {
     if (err) console.error(err)
     else console.log('pow!')
 	db.run("UPDATE Pidentities SET filelink = '" + SMB_MNT_ROOT + "/" + piDee + "' WHERE rowid = " + piDee);
@@ -64,24 +51,37 @@ function traverseFolders(traverseBy, piDee, target)
 	   thisRoot = LOC_ROOT;
 	}
     console.log("Traversing by " + thisRoot);
-	
 	var finder = require('findit2').find(thisRoot);  
-    
 	finder.on('directory', function(dir, stat){
 
 	  if(path.basename(dir) == target)
 	   {
 	     targetLocation = dir;
 		 console.log("Matched with the : " + dir);
-		 while( targetLocation != thisRoot  )  
-          {
+		
 			console.log("Inside the walk up" + targetLocation);
-			fs.symlink(targetLocation, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(targetLocation), 'dir', function(err){
+			/*fs.symlink(targetLocation, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(targetLocation), 'dir', function(err){
 			   if (err) console.error(err);
-			 });
-			 targetLocation = path.normalize(targetLocation + path.sep + "..");
+			 });*/
+			 var innerFinder = require('findit2').find(thisRoot);
+			 innerFinder.on('file', function (file, stat) 
+			     {
+                    if(targetLocation.indexOf(path.dirname(file)) > -1 )
+					{				  
+					  console.log(file);
+					  var pathTitle = path.dirname(file);
+					   //fs.symlink(file, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(targetLocation), 'file', function(err){
+					   fs.link(file, PIFOLDERS_ROOT + path.sep + piDee + path.sep + pathTitle.replace(/\//g, '').replace(' ', '')  + '-' + path.basename(file), function(err){
+						 console.log("Trying ze link: " + PIFOLDERS_ROOT + path.sep + piDee + path.sep + pathTitle.replace(/\//g, '').replace(' ', '')  + '-' + path.basename(file));
+						 if (err) console.error(err);
+						});
+					}
+					else
+					console.log(file);
+			  });
+			// targetLocation = path.normalize(targetLocation + path.sep + "..");
 			 //targetLocation = thisRoot;	
-		  }
+		  
   	    }
 	}); 
    
@@ -272,8 +272,8 @@ function updatePidentity(loc, org, piDee, piip)
 
 	// piFile = db.run("SELECT filelink FROM Pidentities WHERE rowid = " +piChunk.piDee);
 	// db.run("UPDATE Pidentities SET filelink = 'JAMES AND HAYLEY CAN DO IT!' WHERE rowid = 60");
->>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503
 	
+}	
 	
 //NAME: piDeeFunction
 //PARAMETERS: loc, org, piDee, piip are all parts of parsed JSON (piChunk)
@@ -282,108 +282,32 @@ function updatePidentity(loc, org, piDee, piip)
 //         is no piDee, it creates a new entry in the Pidentities table. If
 //         there is a piDee, it checks to make sure everything in the table
 //         is correct and updates the entries. Then the filepath is made and played.
-
 function piDeeFunction(loc, org, piDee, piip)
 {
    db.serialize(function(){
    console.log("5. Entering piDeeFunction");
    var piFile = '';
-  
+   var piDeez = piDee;
   //Location and Org Code are the default settings on the XBMC addon. They need to be set before anything can be run
   if(loc == "Location" || org == "Org Code")
-  {
-    console.log("Sending command to reset pi");
-  }
+    {
+       setTimeout(sendNotification(piip), 5000);
+    }
   else
-  {
-    //checks to see if piDee is the default value from XBMC. This means it needs to 
-	//create a new entry into the Pidentities table and assign a new piDee to the Pi
-	if(piDee == 0)
-	{
-		console.log("Entered the if pjiDee = 0 statement"); 
-		var stmt = db.prepare("INSERT INTO Pidentities (IP_address, Location, Orgcode, timestamp, filelink) VALUES ('" + piip + "', '" + loc + "', '" + org + "', Time('now'), 'c:/blahblahblah')", function(error)
-            {
-			    piDee = this.lastID;
-		        //db.run("UPDATE Pidentities SET filelink = 'XXXXXXXXXXXXXXXX' WHERE rowid = "+ piDee);  
-            });
-        
-		stmt.run();
-	    stmt.finalize();
-        //send JSON command with piDee back to XBMC
-        //build file path = piFile
-	         
-        }
-	else
-	{
-		console.log("6. Entering the else"); 
-	     var locintab = '';
-	     var orgintab = '';
-         //updating the location and orgcode in the table if it does not match the location/org in XBMC
-	    
-		var stmt = db.prepare("SELECT Location, Orgcode FROM Pidentities WHERE rowid = 1"); 
-		 console.log("7. Before the stmt.get (running it)"); 
+    {
+      //checks to see if piDee is the default value from XBMC. This means it needs to 
+  	  //create a new entry into the Pidentities table and assign a new piDee to the Pi
+  	  if(piDee == -1)
+	   {
+		createPidentity(loc, org, piDeez, piip);
+       }
 	   
-		  stmt.get(function(err, row)
-		   {
-				console.log("8. row.location, row.Orgcode: "+ row.Location, row.Orgcode);
-				locintab = row.Location;
-				orgintab = row.Orgcode;
-				console.log("9. inside .run locintab and orgintab: "+ locintab, orgintab)
-				
-				if(loc != locintab || org != orgintab)
-				{
-				   db.run("UPDATE Pidentities SET Location = '" +loc+"', Orgcode = '" +org+"' WHERE rowid = "+ piDee).finalize();
-				   console.log("Lovely if statement about location and org");
-				   //db.run("UPDATE Pidentities SET Orgcode = '" +org +"' WHERE rowid = "+ piChunk.piDee);
-				}  
-			
-			   console.log("10. After get, before finalize");
-				
-			});
-			//stmt.finalize();
-			
-	      console.log("11. Outside stmt.get: " + loc, org);	   
-	
-		  // piFile = db.run("SELECT filelink FROM Pidentities WHERE rowid = " +piChunk.piDee);
-		  // db.run("UPDATE Pidentities SET filelink = 'JAMES AND HAYLEY CAN DO IT!' WHERE rowid = 60");
-		
-	}
+	  else
+	   {
+		console.log("6. Entering the else"); 
+	    updatePidentity(loc, org, piDeez, piip);
+	   }
 	console.log("12. Random spot after the outside stmt.get but before table"); 
-<<<<<<< HEAD
-  }
-  	//updating the filelink for specific piDee in the table
-	db.run("UPDATE Pidentities SET filelink = 'JAMES AND HAYLEY ARE CHIP AND DALE' WHERE rowid = "+ piDee);
-	//printing	
-	db.each("SELECT rowid AS piDee, * FROM Pidentities", function(err, row) 
-	{
-	   console.log(row.piDee + ": " + row.Location, row.IP_address, row.Orgcode, row.timestamp, row.filelink);
-	});
-});
-}
-
-
-http.createServer(function (inreq, res)
-{
- 
-   console.log("1. SERVER SERVER");
-   inreq.on('data', function (data)
-   {
-      body += data;
-   });
-
-
-   inreq.on('end', function()
-   {
-	   res.writeHead(200, {'Content-Type': 'application/json'});
-	   res.end('{OK}\n');
-	
-	 console.log("3. Parsing JSON") 
-     piChunk = JSON.parse(body);
-	 console.log("4. Calling piDeeFunction")
-     piDeeFunction(piChunk.location, piChunk.org, piChunk.piDee, piChunk.piip);
-		
-		var user = { 
-=======
      //updating the filelink for specific piDee in the table
     //db.run("UPDATE Pidentities SET filelink = 'JAMES AND HAYLEY ARE CHIP AND DALE' WHERE rowid = "+ piDee);
    }
@@ -402,20 +326,10 @@ function playPiFilling(piDee, piip)
 {
 
     var user = { 
->>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503
 		  jsonrpc: '2.0', 
 		  id: '1', 
-		  method: 'GUI.ShowNotification',  //eventually player.open
+		  method: 'Player.Open', 
 		  params: {
-<<<<<<< HEAD
-			 title: 'HAYLEY AND PETER ROCK!',
-			 message: body 
-		  }
-		}; 
-	   
-	   var userString = JSON.stringify(user); 
-
-=======
 			item: {
 			    directory: SMB_MNT_ROOT + "/" + piDee
 			 }
@@ -424,18 +338,13 @@ function playPiFilling(piDee, piip)
 	   
 	 var userString = JSON.stringify(user); 
        console.log(userString, piip);
->>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503
 	   var headers = { 
 		  'Content-Type': 'application/json', 
 		  'Content-Length': userString.length 
 	   };
 	 
 	   var options = { 
-<<<<<<< HEAD
-		  host: '139.169.8.145', 
-=======
 		  host: piip, 
->>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503
 		  port: 80, 
 		  path: '/jsonrpc', 
 		  method: 'POST', 
@@ -448,14 +357,13 @@ function playPiFilling(piDee, piip)
 		  res.setEncoding('utf-8'); 
 		  var responseString = ''; 
 		  
-		  res.on('data', function(data) {
+		  res.on('data', function(data) 
+		  {
 			 responseString += data;
 		  }); 
-		 console.log(body);
+		
 		 console.log('Leaving outgoing request');
 		 
-          	 
-
 		  res.on('end', function() { 
 			 var resultObject = JSON.parse(responseString); 
 		   }); 
@@ -465,11 +373,6 @@ function playPiFilling(piDee, piip)
 		  // TODO: handle error. 
 		});
 
-<<<<<<< HEAD
-	   outreq.write(userString); 
-	   outreq.end();
-
-=======
 	  outreq.write(userString); 
 	  outreq.end();
 }
@@ -498,7 +401,6 @@ http.createServer(function (inreq, res)
 
 	  
 	   body='';	
->>>>>>> e09eff910e1c44142deb08e75a731d7cfb921503
    });
 
 	console.log('2. This is the end');
@@ -507,53 +409,4 @@ http.createServer(function (inreq, res)
 	//Close near server shut down
 	//Google to find out what that http.COMMAND is
 	
-}).listen(8123);
-
- //EMERGENCY ALERT
-var HTMLserver=http.createServer(function(req,res)
-{
-	console.log('collectDATA for Emergency Service');
-	if (req.method=='GET')
-	{
-		console.log('HOOTINANNY');
-		res.end('<html> \
-					<body> \
-						<form action="/Home/Index" method="POST" name="form1"> \
-							TOGGLE CONTROL \
-							<input type="radio" name="Toggleradio" value="ON">ON \
-							<input type="radio" name="Toggleradio" value="OFF">OFF <br> <br>\
-							<input type="radio" name="Destinationradio" value="IPTV">IPTV \
-								<select name="Channels"> \
-								<option value="NASATV">NASATV</option> \
-								<option value="ISS1">ISS1</option> \
-								<option value="ISS2">ISS2</option> \
-								<option value="ISS3">ISS3</option> \
-								</select> <br> \
-							<input type="radio" name="Destinationradio" value="EMERGENCY FOLDER">EMERGENCY FOLDER \
-							<br><br> Select the Destination(s) of Notification. <br> <br> \
-							<input type="checkbox" name="PIdestination" value="PI 1">PI 1<br> \
-							<input type="checkbox" name="PIdestination" value="PI 2">PI 2<br> \
-							<input type="checkbox" name="PIdestination" value="PI 3">PI 3<br> \
-							<input type="checkbox" name="PIdestination" value="PI 4">PI 4<br> \
-							<input type="checkbox" name="PIdestination" value="PI 5">PI 5<br> \
-							<button type="submit" id="btnPost">Post Data</button> \
-						</form> \
-					</body> \
-				</html>');
-	}
-	else
-	{
-		var alertChunk = '';
-		req.on('data', function (data)
-		{
-			alertChunk += data;
-		});
-		req.on('end', function () 
-		{
-			console.log(alertChunk + "<-Posted Data Test");
-			
-			res.end(util.inspect(querystring.parse(alertChunk)));
-		});
-	}
-}).listen(8080); 
-
+}).listen(8124);
