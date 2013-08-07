@@ -46,7 +46,7 @@ def watchdog():
 class MyClass:
     print 'CAPTAIN MURPHY'
 
-    xbmc.Player().play('C:\\Wildlife.wmv')
+    #xbmc.Player().play('C:\\Wildlife.wmv')
 #Standard setup of main
 if (__name__ == "__main__"):
     xbmc.log('Version %s started' % __addonversion__)
@@ -74,6 +74,6 @@ if (__name__ == "__main__"):
     print response
     time.sleep(5)
     
-    watchdog()
+    #watchdog()
     #Watchdog
     
