@@ -217,7 +217,7 @@ function createPidentity(loc, org, piDee, piip)
 				console.log(piDee);
 				sendpiDeeSetting(piip, piDee);
 				createNewFolder(piDee, org, loc); 
-				playPiFilling(piDee, piip);
+				
             });
    
 		//stmt.run();
@@ -306,39 +306,62 @@ function piDeeFunction(loc, org, piDee, piip)
 	 console.log(row.piDee + ": " + row.Location, row.IP_address, row.Orgcode, row.timestamp, row.filelink);
    });
   });
-  
 }
 
-function playPiFilling(piDee, piip)
-{
 
-    var user = { 
+
+
+http.createServer(function (inreq, res)
+{
+    
+   console.log("1. SERVER SERVER");
+   inreq.on('data', function (data)
+   {
+      body += data;
+   });
+
+
+   inreq.on('end', function()
+   {
+	   res.writeHead(200, {'Content-Type': 'application/json'});
+	   res.end('{OK}\n');
+	
+	 console.log("3. Parsing JSON"); 
+	 console.log("3.5" + body);
+     piChunk = JSON.parse(body);
+	 console.log("4. Calling piDeeFunction");
+     piDeeFunction(piChunk.location, piChunk.org, piChunk.piDee, piChunk.piip);
+		
+		var user = { 
 		  jsonrpc: '2.0', 
 		  id: '1', 
 		  method: 'Player.Open', 
 		  params: {
 			item: {
-			    directory: SMB_MNT_ROOT + "/" + piDee
+			    directory: SMB_MNT_ROOT + "/" + piChunk.piDee
 			 }
 		  }
 		}; 
 	   
-	 var userString = JSON.stringify(user); 
-       console.log(userString, piip);
+	   var userString = JSON.stringify(user); 
+       console.log(userString, piChunk.piip);
 	   var headers = { 
 		  'Content-Type': 'application/json', 
 		  'Content-Length': userString.length 
 	   };
 	 
 	   var options = { 
-		  host: piip, 
+		  host: piChunk.piip, 
 		  port: 80, 
 		  path: '/jsonrpc', 
 		  method: 'POST', 
 		  headers: headers 
 	   }; 
-	   
-	    var outreq = http.request(options, function(res) { 
+		console.log('Before outgoing request');
+				
+	   // Setup the request. The options parameter is 
+	   // the object we defined above. 
+	   var outreq = http.request(options, function(res) { 
 		  console.log('start of outgoing request');
 
 		  res.setEncoding('utf-8'); 
@@ -362,31 +385,6 @@ function playPiFilling(piDee, piip)
 
 	  outreq.write(userString); 
 	  outreq.end();
-}
-
-
-http.createServer(function (inreq, res)
-{
-    
-   console.log("1. SERVER SERVER");
-   inreq.on('data', function (data)
-   {
-      body += data;
-   });
-
-
-   inreq.on('end', function()
-   {
-	   res.writeHead(200, {'Content-Type': 'application/json'});
-	   res.end('{OK}\n');
-	
-	 console.log("3. Parsing JSON"); 
-	 console.log("3.5" + body);
-     piChunk = JSON.parse(body);
-	 console.log("4. Calling piDeeFunction");
-     piDeeFunction(piChunk.location, piChunk.org, piChunk.piDee, piChunk.piip);
-
-	  
 	   body='';	
    });
 

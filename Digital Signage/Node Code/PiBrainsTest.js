@@ -217,7 +217,7 @@ function createPidentity(loc, org, piDee, piip)
 				console.log(piDee);
 				sendpiDeeSetting(piip, piDee);
 				createNewFolder(piDee, org, loc); 
-				playPiFilling(piDee, piip);
+				
             });
    
 		//stmt.run();
@@ -306,10 +306,9 @@ function piDeeFunction(loc, org, piDee, piip)
 	 console.log(row.piDee + ": " + row.Location, row.IP_address, row.Orgcode, row.timestamp, row.filelink);
    });
   });
-  
 }
 
-function playPiFilling(piDee, piip)
+function playPiFilling(piDee, data, )
 {
 
     var user = { 
@@ -318,20 +317,20 @@ function playPiFilling(piDee, piip)
 		  method: 'Player.Open', 
 		  params: {
 			item: {
-			    directory: SMB_MNT_ROOT + "/" + piDee
+			    directory: SMB_MNT_ROOT + "/" + piChunk.piDee
 			 }
 		  }
 		}; 
 	   
 	 var userString = JSON.stringify(user); 
-       console.log(userString, piip);
+       console.log(userString, piChunk.piip);
 	   var headers = { 
 		  'Content-Type': 'application/json', 
 		  'Content-Length': userString.length 
 	   };
 	 
 	   var options = { 
-		  host: piip, 
+		  host: piChunk.piip, 
 		  port: 80, 
 		  path: '/jsonrpc', 
 		  method: 'POST', 

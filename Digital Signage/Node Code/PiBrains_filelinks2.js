@@ -51,24 +51,40 @@ function traverseFolders(traverseBy, piDee, target)
 	   thisRoot = LOC_ROOT;
 	}
     console.log("Traversing by " + thisRoot);
-	
 	var finder = require('findit2').find(thisRoot);  
-    
 	finder.on('directory', function(dir, stat){
 
 	  if(path.basename(dir) == target)
 	   {
-	     targetLocation = dir;
-		 console.log("Matched with the : " + dir);
-		 while( targetLocation != thisRoot  )  
-          {
-			console.log("Inside the walk up" + targetLocation);
-			fs.symlink(targetLocation, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(targetLocation), 'dir', function(err){
-			   if (err) console.error(err);
-			 });
-			 targetLocation = path.normalize(targetLocation + path.sep + "..");
-			 //targetLocation = thisRoot;	
-		  }
+	    
+  		targetLocation = dir;
+		console.log("Matched with the : " + dir);
+		fs.readdir(targetLocation, function(err, list){
+		 console.log(list);
+ 		 list.foreach(function(file) 
+		   {
+				console.log(file);
+			   fs.link(file, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(file), function(err)
+				{
+				     if (err) console.error(err);
+			    });
+		   });
+		});
+			// console.log("Inside the walk up" + targetLocation);
+			// /*fs.symlink(targetLocation, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(targetLocation), 'dir', function(err){
+			   // if (err) console.error(err);
+			 // });*/
+			// var innerFinder = require('findit2').find(targetLocation);
+			// innerFinder.on('file', function (file, stat) 
+			  // {
+				   // console.log(file);
+                   // //fs.symlink(file, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(targetLocation), 'file', function(err){
+			       // fs.link(file, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(file), function(err){
+				     // if (err) console.error(err);
+			    // });
+			  // });
+			 // targetLocation = path.normalize(targetLocation + path.sep + "..");
+			 // //targetLocation = thisRoot;	
   	    }
 	}); 
    
