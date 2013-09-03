@@ -6,102 +6,98 @@ var querystring=require('querystring');
 var sqlite3 = require('sqlite3').verbose(); 
 var mkdirp = require('mkdirp');
 var path = require('path');
-var file = "test10.db";
+var findit = require('findit2');
+
+var file = "piDee.db";
 var piChunk = '';
 var body = '';
 var db = new sqlite3.Database(file);
 var exists = fs.existsSync(file);
-var ORG_ROOT = "/media/piFilling/Org"
-var LOC_ROOT = "/media/piFilling/Location"  
-var PIFOLDERS_ROOT = "/media/piFolders"    //this holds the folders with the symlinks the pi accesses
-var SMB_MNT_ROOT = "smb://10.128.1.137/piFolders" 
 
-   //create the database if it has not been created 
-   if(!exists)
-    {
-      //create Pidentities db file
-      console.log("Creating Pidentities Database."); 
-      fs.openSync(file, "w"); 
-      //create Pidentities table
-	  db.run("CREATE TABLE IF NOT EXISTS Pidentities (timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT)"); 
-      
-   }  
+var ORG_ROOT = "C:\\DigitalSignage\\media\\piFilling\\Org";//"media/piFilling/Org"
+var LOC_ROOT = "C:\\DigitalSignage\\media\\piFilling\\Location";  
+var PIFOLDERS_ROOT = "C:\\DigitalSignage\\media\\piFolders";    //this holds the folders with the symlinks the pi accesses
+
+//Mount point for nfs share on the Pi
+var NFS_MNT_ROOT = "/media" 
+
+//create the database if it has not been created 
+//if(!exists){
+    //create Pidentities db file
+    console.log("Creating Pidentities Database."); 
+    fs.openSync(file, "a"); 
+    //create Pidentities table
+	db.run("CREATE TABLE IF NOT EXISTS Pidentities (timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT)"); 
+//}  
 
 
-function createNewFolder(piDee, org, loc)
-{
-   mkdirp(PIFOLDERS_ROOT + path.sep + piDee, function (err) {
-    if (err) console.error(err)
-    else console.log('pow!')
-	db.run("UPDATE Pidentities SET filelink = '" + SMB_MNT_ROOT + "/" + piDee + "' WHERE rowid = " + piDee);
+function createNewFolder(piDee, org, loc) {
+    //Create the new folder
+	mkdirp(PIFOLDERS_ROOT + path.sep + piDee, function (err) {
+		err ? console.log(err) : console.log("No errors in creating new folder for "+piDee);
+	});
+
+	//Update the DB for pIDs to point to the newly created folder
+	db.run("UPDATE Pidentities SET filelink = '" + PIFOLDERS_ROOT + path.sep + piDee + "' WHERE rowid = " + piDee);
+	
+	//Populate the folder with media
 	populateFolder(org, loc, piDee);	
-	//put in NASA Meatball
-	fs.symlink("/media/piFilling/nasameatball.png", PIFOLDERS_ROOT + path.sep + piDee + path.sep + "nasameatball.png", 'file', function(err){
-	   if (err) console.error(err)
-	   });
-   });
+	
+	//put in obligatory NASA Meatball
+	fs.symlink("C:\\DigitalSignage\\media\\piFilling\\nasameatball.png", PIFOLDERS_ROOT + path.sep + piDee + path.sep + "nasameatball.png",
+			   'file', function(err){
+					err ? console.error(err) : console.log("No errors in linking NASA logo for "+piDee);
+				}
+	); 
 }	
 
 function traverseFolders(traverseBy, piDee, target)
 {
-   var thisRoot = '';
-   var targetLocation = '';
-   
-   if(traverseBy == "org")
-	{
-       thisRoot = ORG_ROOT;
+	var thisRoot = '';
+	var targetLocation = '';  
+
+	//Determine which path to follow, organization or location
+	if(traverseBy == "org"){
+		thisRoot = ORG_ROOT;
 	}
-   else
-	{
-	   thisRoot = LOC_ROOT;
+	else {
+		thisRoot = LOC_ROOT;
 	}
-    console.log("Traversing by " + thisRoot);
-	var finder = require('findit2').find(thisRoot);  
+	
+	console.log("Traversing by " + thisRoot);
+	
+	var finder = findit.find(thisRoot);
 	finder.on('directory', function(dir, stat){
-
-	  if(path.basename(dir) == target)
-	   {
-	     targetLocation = dir;
-		 console.log("Matched with the : " + dir);
+		if(path.basename(dir) == target)
+		{
+			targetLocation = dir;
+			console.log("Matched with the : " + dir);
 		
-			console.log("Inside the walk up" + targetLocation);
-			/*fs.symlink(targetLocation, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(targetLocation), 'dir', function(err){
-			   if (err) console.error(err);
-			 });*/
-			 var innerFinder = require('findit2').find(thisRoot);
-			 innerFinder.on('file', function (file, stat) 
-			     {
-                    if(targetLocation.indexOf(path.dirname(file)) > -1 )
-					{				  
-					  console.log(file);
-					  var pathTitle = path.dirname(file);
-					   //fs.symlink(file, PIFOLDERS_ROOT + path.sep + piDee + path.sep + path.basename(targetLocation), 'file', function(err){
-					   fs.link(file, PIFOLDERS_ROOT + path.sep + piDee + path.sep + pathTitle.replace(/\//g, '').replace(' ', '')  + '-' + path.basename(file), function(err){
-						 console.log("Trying ze link: " + PIFOLDERS_ROOT + path.sep + piDee + path.sep + pathTitle.replace(/\//g, '').replace(' ', '')  + '-' + path.basename(file));
-						 if (err) console.error(err);
+			console.log("Inside the walk up " + targetLocation);
+			var innerFinder = findit.find(thisRoot);
+			innerFinder.on('file', function (file, stat){
+				if(targetLocation.indexOf(path.dirname(file)) > -1 ){				  
+						pathArray = file.split("\\");
+						filename=pathArray[pathArray.length-1].replace(/\//g,'\\');
+						fs.symlink(file.replace(/\//g,'\\'), PIFOLDERS_ROOT + path.sep + piDee + path.sep + filename, function(err){
+							console.log(file.replace(/\//g,'\\'));
+							console.log("Trying ze link: " + PIFOLDERS_ROOT + path.sep + piDee + path.sep + filename);
+							if (err) console.error(err);
 						});
-					}
-					else
+				}
+				else{
 					console.log(file);
-			  });
-			// targetLocation = path.normalize(targetLocation + path.sep + "..");
-			 //targetLocation = thisRoot;	
-		  
-  	    }
+				}
+			});
+  		}
 	}); 
-   
-   //targetLocation is a result of walking down
-   console.log("Before Walking back up");
-   //walking back up
-
 }
 
 function populateFolder(org, location, piDee)
 {
-  // delete all the links
-  console.log("Traversing the org folders");
+  console.log("\nTraversing the org folders\n");
   traverseFolders('org', piDee, org)
-  console.log("Traversing the location folders");
+  console.log("\nTraversing the location folders\n");
   traverseFolders('loc', piDee, location)
 }
 
@@ -226,7 +222,7 @@ function sendNotification(piip)
 //PURPOSE: 
 function createPidentity(loc, org, piDee, piip)
 {
-   console.log("Entered the if piDee = 0 statement"); 
+   console.log("Entered the if piDee = -1 statement"); 
 		db.run("INSERT INTO Pidentities (IP_address, Location, Orgcode, timestamp, filelink) VALUES ('" + piip + "', '" + loc + "', '" + org + "', Time('now'), 'c:/blahblahblah')", function(error)
             {
 			    piDee = this.lastID;
@@ -253,6 +249,7 @@ function updatePidentity(loc, org, piDee, piip)
 	
 	var stmt = db.prepare("SELECT Location, Orgcode FROM Pidentities WHERE rowid = " + piDee); 
 	console.log("7. Before the stmt.get (running it)"); 
+	console.log(stmt);
 	
 	stmt.get(function(err, row)
 	{
@@ -340,7 +337,7 @@ function playPiFilling(piDee, piip)
 		  method: 'Player.Open', 
 		  params: {
 			item: {
-			    directory: SMB_MNT_ROOT + "/" + piDee
+			    directory: NFS_MNT_ROOT + "/piFolders/" + piDee
 			 }
 		  }
 		}; 
@@ -406,6 +403,7 @@ http.createServer(function (inreq, res)
 	 console.log("3. Parsing JSON"); 
 	 console.log("3.5" + body);
      piChunk = JSON.parse(body);
+	 console.log(piChunk);
 	 console.log("4. Calling piDeeFunction");
      piDeeFunction(piChunk.location, piChunk.org, piChunk.piDee, piChunk.piip);
 
@@ -522,7 +520,7 @@ function playEmergency(piip)
 		  method: 'Player.Open', 
 		  params: {
 			item: {
-			    directory: SMB_MNT_ROOT + "/Emergency"
+			    directory: NFS_MNT_ROOT + "/Emergency"
 			 }
 		  }
 		}; 
