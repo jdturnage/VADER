@@ -11,10 +11,11 @@ var piChunk = '';
 var body = '';
 var db = new sqlite3.Database(file);
 var exists = fs.existsSync(file);
-var ORG_ROOT = "/media/piFilling/Org"
-var LOC_ROOT = "/media/piFilling/Location"  
-var PIFOLDERS_ROOT = "/media/piFolders"    //this holds the folders with the symlinks the pi accesses
-var SMB_MNT_ROOT = "smb://10.128.1.137/piFolders"
+var ORG_ROOT = "/media/piFilling/Org";
+var LOC_ROOT = "/media/piFilling/Location";  
+var PIFOLDERS_ROOT = "/media/piFolders";    //this holds the folders with the symlinks the pi accesses
+var SMB_MNT_ROOT = "smb://10.128.1.137/piFolders";
+var piBool = true;
 
 
 
@@ -29,7 +30,7 @@ var SMB_MNT_ROOT = "smb://10.128.1.137/piFolders"
 		console.log("Conditionally Creating Pidentities Database."); 
 		fs.openSync(file, "w");
 		//create Pidentities table
-		db.run("CREATE TABLE IF NOT EXISTS Pidentities (timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT)"); 
+		db.run("CREATE TABLE IF NOT EXISTS Pidentities (timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT, emergencyActive TEXT)"); 
 		
 		//create iptvTable
 		console.log("Creating iptvChannels Database.");
@@ -441,6 +442,36 @@ function playPiFilling(piDee, piip)
 	outreq.end();
 }
 
+function controlCheck()
+{
+	if (alertChunk.Control == "ON")
+	{
+		console.log("CONTROL HAS BEEN ACTIVATED");
+		//Check which Pi's have been selected. For each selected, check boolean emergencyActive from Pidentities table. 
+		//If one is true, do nothing. If false, boolean = true and playEmergency() from selected source.
+	}
+	else
+	{
+		console.log("CONTROL HAS NOT BEEN ACTIVATED");
+		//Take no action on submission
+		//Give message saying nothing has been changed.
+	}
+}
+
+
+//This function isn't really necessary...
+function sourceCheck()
+{
+	if (alertChunk.Source == "EMERGENCY FOLDER")
+	{
+		console.log("Play emergency from the emergency folder")
+	}
+	else
+	{
+		console.log('Play emergency from IPTV channel ' +alertChunk.Channels);
+	}
+}
+
 
 http.createServer(function (inreq, res)
 {
@@ -474,6 +505,7 @@ http.createServer(function (inreq, res)
 
 
 
+
 //EMERGENCY ALERT
 var HTMLserver=http.createServer(function(req,res)
 {
@@ -496,10 +528,9 @@ var HTMLserver=http.createServer(function(req,res)
 		
 		iptvstmt.each(function(err,row)
 		{
-			checkChannels += '<option value = "'+row.ipaddress+'">' + row.channel_name + '</option><br>'
+			checkChannels += '<option value = "'+row.ip_address+'">' +row.channel_name+ '</option><br>'
 		});
 		
-		//create a new stmt.each function for checkChannels
 		
 		var selectAll = '<script language="JavaScript"> \
                          function toggle(source) { \
@@ -521,7 +552,7 @@ var HTMLserver=http.createServer(function(req,res)
 							<form action="/" method="POST" name="form1"> \
 								<b>TOGGLE CONTROL</b> \
 								<input type="radio" name="Control" value="ON">ON \
-								<input type="radio" name="Control" value="OFF">OFF <br> <br>\
+								<input type="radio" name="Control" value="OFF" checked>OFF <br> <br>\
 								<b>Select the Source of Notification</b> <br> <br> \
 								<input type="radio" name="Source" value="IPTV">IPTV \
 									<select name="Channels"> \
@@ -533,10 +564,10 @@ var HTMLserver=http.createServer(function(req,res)
 								+checkNames+ 
 								'<input type="checkbox" onClick="toggle(this)" name="SelectAll" value="Select All"> Select All\
 								<br><br>\
-								<button type="submit" id="btnPost">Post Data</button> \
-							</form> '
-							+selectAll+ 
-						'</body> \
+								<button type="submit" id="btnPost">Post Data</button> '
+								+selectAll+ 
+							'</form> \
+						</body> \
 					</html>');
 		});
 	}
@@ -558,7 +589,16 @@ var HTMLserver=http.createServer(function(req,res)
 			alertChunk = querystring.parse(alert);
 			console.log(alertChunk.Destination);
 			
-			var piipSelect = "SELECT IP_Address FROM Pidentities WHERE ";
+			//Print out to confrim output.
+			console.log(alertChunk.Control);
+			console.log(alertChunk.Source);
+			console.log(alertChunk.Channels);
+			
+			controlCheck();
+			sourceCheck();
+			
+			//This section commented out only because i am not connected to any pi's
+			/* var piipSelect = "SELECT IP_Address FROM Pidentities WHERE ";
 			alertChunk.Destination.forEach(function(currentIterationOfLoop)
 			{
 				piipSelect += "rowid = " + currentIterationOfLoop + " OR ";
@@ -572,7 +612,7 @@ var HTMLserver=http.createServer(function(req,res)
 			{
 				console.log(row.IP_address);
 				playEmergency(row.IP_address);
-			});
+			}); */
 
 		});
 	}
