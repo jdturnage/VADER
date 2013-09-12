@@ -11,10 +11,14 @@ var piChunk = '';
 var body = '';
 var db = new sqlite3.Database(file);
 var exists = fs.existsSync(file);
-var ORG_ROOT = "/media/piFilling/Org";
-var LOC_ROOT = "/media/piFilling/Location";  
-var PIFOLDERS_ROOT = "/media/piFolders";    //this holds the folders with the symlinks the pi accesses
-var SMB_MNT_ROOT = "smb://10.128.1.137/piFolders";
+//var ORG_ROOT = "/media/piFilling/Org";
+var ORG_ROOT = "/storage/media";
+//var LOC_ROOT = "/media/piFilling/Location";
+var LOC_ROOT = "/storage/media";
+/*var PIFOLDERS_ROOT = "/media/piFolders";    //this holds the folders with the symlinks the pi accesses */
+var PIFOLDERS_ROOT = "/storage/media";
+//var SMB_MNT_ROOT = "smb://10.128.1.137/piFolders";
+var SMB_MNT_ROOT = "rdp://139.169.8.48/storage/media/";
 var piBool = true;
 
 
@@ -26,11 +30,11 @@ var piBool = true;
 	
 	db.serialize(function() {
 	
-		//create Pidentities db file
+		/* //create Pidentities db file
 		console.log("Conditionally Creating Pidentities Database."); 
 		fs.openSync(file, "w");
 		//create Pidentities table
-		db.run("CREATE TABLE IF NOT EXISTS Pidentities (timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT, emergencyActive TEXT)"); 
+		db.run("CREATE TABLE IF NOT EXISTS Pidentities (timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT, emergencyActive TEXT)");  */
 		
 		//create iptvTable
 		console.log("Creating iptvChannels Database.");
@@ -66,7 +70,13 @@ var piBool = true;
 		db.run("INSERT INTO iptvTable(channel_name, ip_address) VALUES ('Satellite Map','udp://@239.15.15.45:30120')");
 		db.run("INSERT INTO iptvTable(channel_name, ip_address) VALUES ('NASA Channel','udp://@239.15.15.46:30120')");
 		db.run("INSERT INTO iptvTable(channel_name, ip_address) VALUES ('NASA Educational','udp://@239.15.15.47:30120')");
-	//}  
+		//}
+		
+		//create Pidentities db file
+		console.log("Conditionally Creating Pidentities Database."); 
+		fs.openSync(file, "w");
+		//create Pidentities table
+		db.run("CREATE TABLE IF NOT EXISTS Pidentities (timestamp TEXT, IP_address TEXT, Location TEXT, Orgcode TEXT, filelink TEXT, emergencyActive TEXT)");  
 		db.each("SELECT * FROM iptvTable", function(err, row) {
 		console.log(row.channel_name + ", " + row.ip_address);
 		});
@@ -80,7 +90,8 @@ function createNewFolder(piDee, org, loc)
 	db.run("UPDATE Pidentities SET filelink = '" + SMB_MNT_ROOT + "/" + piDee + "' WHERE rowid = " + piDee);
 	populateFolder(org, loc, piDee);	
 	//put in NASA Meatball
-	fs.symlink("/media/piFilling/nasameatball.png", PIFOLDERS_ROOT + path.sep + piDee + path.sep + "nasameatball.png", 'file', function(err){
+	//fs.symlink("/media/piFilling/nasameatball.png", PIFOLDERS_ROOT + path.sep + piDee + path.sep + "nasameatball.png", 'file', function(err){
+	fs.symlink("/storage/media/Slide1.JPG", PIFOLDERS_ROOT + path.sep + piDee + path.sep + "Slide1.JPG", 'file', function(err){
 	if (err) console.error(err)
 		});
 	});
@@ -449,12 +460,16 @@ function controlCheck()
 		console.log("CONTROL HAS BEEN ACTIVATED");
 		//Check which Pi's have been selected. For each selected, check boolean emergencyActive from Pidentities table. 
 		//If one is true, do nothing. If false, boolean = true and playEmergency() from selected source.
+		
+		playEmergency(row.IP_address);
+		
 	}
 	else
 	{
 		console.log("CONTROL HAS NOT BEEN ACTIVATED");
 		//Take no action on submission
 		//Give message saying nothing has been changed.
+		console.log("Nothing will be changed");
 	}
 }
 
@@ -465,6 +480,7 @@ function sourceCheck()
 	if (alertChunk.Source == "EMERGENCY FOLDER")
 	{
 		console.log("Play emergency from the emergency folder")
+		playEmergency(row.IP_address);
 	}
 	else
 	{
@@ -594,11 +610,10 @@ var HTMLserver=http.createServer(function(req,res)
 			console.log(alertChunk.Source);
 			console.log(alertChunk.Channels);
 			
-			controlCheck();
-			sourceCheck();
+			//sourceCheck();
 			
 			//This section commented out only because i am not connected to any pi's
-			/* var piipSelect = "SELECT IP_Address FROM Pidentities WHERE ";
+			var piipSelect = "SELECT IP_Address FROM Pidentities WHERE ";
 			alertChunk.Destination.forEach(function(currentIterationOfLoop)
 			{
 				piipSelect += "rowid = " + currentIterationOfLoop + " OR ";
@@ -612,8 +627,10 @@ var HTMLserver=http.createServer(function(req,res)
 			{
 				console.log(row.IP_address);
 				playEmergency(row.IP_address);
-			}); */
-
+				sourceCheck() //this line added
+			});
+			
+			
 		});
 	}
 
@@ -623,7 +640,7 @@ var HTMLserver=http.createServer(function(req,res)
 
 function playEmergency(piip)
 {
-  
+	console.log("PLAY EMERGENCY FUNCTION CALL");
     var user = 
 	{ 
 		jsonrpc: '2.0', 
@@ -633,7 +650,8 @@ function playEmergency(piip)
 		{
 			item: 
 			{
-				directory: SMB_MNT_ROOT + "/Emergency"
+				//directory: SMB_MNT_ROOT + "/Emergency"
+				//directory: SMB_MNT_ROOT
 			}
 		}
 	}; 
@@ -685,3 +703,5 @@ function playEmergency(piip)
 	outreq.write(userString); 
 	outreq.end();
 }
+
+//
