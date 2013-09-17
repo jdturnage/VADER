@@ -8,13 +8,8 @@ var querystring = require('querystring');
 var sqlite3 = require('sqlite3').verbose();
 var mkdirp = require('mkdirp');
 var path = require('path');
-<<<<<<< HEAD
-var findit = require('findit2');
-//var chokidar = require('chokidar');
-=======
 var findit2 = require('findit2');
 var hound = require('hound');
->>>>>>> 3233f741cd5e1c75b93938d22f3f2bf5362ddbba
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -30,7 +25,6 @@ var PIFOLDERS_ROOT = "C:\\DigitalSignage\\media\\piFolders";
 //Location where the Pi can access the folders above, either SMB share or NFS
 //	If NFS, the share must be mounted
 var NFS_MNT_ROOT = "/media"
-//var NFS_MNT_ROOT = "C:\\"
 
 //--------------------------------------------------------------------------------------------------
 // Database Initialization
@@ -54,7 +48,10 @@ try {
     console.log(err);
 }
 
-<<<<<<< HEAD
+//-------------------------------------------------------------------------------------------------
+// Hound Filesystem Watching
+watcher = hound.watch(MEDIA_ROOT);
+watcher.on('create',updateFolders);
 try {
     db.serialize(function() {
 		console.log('Opening Database Once Again.');
@@ -105,21 +102,6 @@ try {
     console.log(err);
 }
 
-/*-------------------------------------------------------------------------------------------------
-// Chokidar Filesystem Watching
-chokidar = require('chokidar');
-watcher = chokidar.watch(MEDIA_ROOT);
-watcher.on('add',updateFolders);
-
-function updateFolders(path){
-	console.log(path);
-	db.each("SELECT location, orgcode FROM Pidentities", function(err,row){
-		console.log(row.pID+' '+row.location + ' ' + row.orgcode);
-=======
-//-------------------------------------------------------------------------------------------------
-// Hound Filesystem Watching
-watcher = hound.watch(MEDIA_ROOT);
-watcher.on('create',updateFolders);
 
 function updateFolders(file){
 	console.log('File Created:' +file);
@@ -148,7 +130,6 @@ function updateFolders(file){
 		
 		//Inject into the Pi's Playlist for immediacy
 		addToPlaylist(row.ipaddress, NFS_MNT_ROOT+'/piFolders/'+row.pID+'/'+filename);
->>>>>>> 3233f741cd5e1c75b93938d22f3f2bf5362ddbba
 	});
 }
 
@@ -509,7 +490,6 @@ function sendNotification(piip, message, duration) {
     outreq.end();
 }
 
-<<<<<<< HEAD
 
 /*--------------------------------------------------------------------------------------------------	
 // emergencyOverride : string
@@ -529,6 +509,25 @@ function emergencyOverride(emergencyDestination)
 	else {
 		console.log("CONTROL HAS NOT BEEN ACTIVATED");
 		console.log("Nothing will be changed");
+//--------------------------------------------------------------------------------------------------
+function updateDatabase(piDee, loc, org, piip) {
+    //updating the location and orgcode in the table if it does not match the location/org in XBMC
+    var stmt = db.prepare("SELECT location, orgcode FROM Pidentities WHERE rowid = " + piDee);
+	var update = false;
+	
+    stmt.get(function (err, row) {
+        if (loc != row.location || org != row.orgcode || piip != row.ipaddress) {
+			console.log('Updating information for '+piDee+' to '+loc+' '+org+' '+piip);
+            update = true;
+			db.run("UPDATE Pidentities SET location = '" + loc + "', orgcode = '" + org + "', ipaddress = '" + piip + "' WHERE rowid =  " + piDee);
+        }
+    });
+    stmt.finalize(function () {
+        //We need to repopulate all the folders and begin playing if the info changed
+		if(update){populateFolder(piDee,loc, org, piip);}		
+    });
+}
+
 	}
 }
 
@@ -668,27 +667,6 @@ function playEmergencyIPTV(emergencyDestination) {
 
 
 
-=======
-//--------------------------------------------------------------------------------------------------
-function updateDatabase(piDee, loc, org, piip) {
-    //updating the location and orgcode in the table if it does not match the location/org in XBMC
-    var stmt = db.prepare("SELECT location, orgcode FROM Pidentities WHERE rowid = " + piDee);
-	var update = false;
-	
-    stmt.get(function (err, row) {
-        if (loc != row.location || org != row.orgcode || piip != row.ipaddress) {
-			console.log('Updating information for '+piDee+' to '+loc+' '+org+' '+piip);
-            update = true;
-			db.run("UPDATE Pidentities SET location = '" + loc + "', orgcode = '" + org + "', ipaddress = '" + piip + "' WHERE rowid =  " + piDee);
-        }
-    });
-    stmt.finalize(function () {
-        //We need to repopulate all the folders and begin playing if the info changed
-		if(update){populateFolder(piDee,loc, org, piip);}		
-    });
-}
-
->>>>>>> 3233f741cd5e1c75b93938d22f3f2bf5362ddbba
 http.createServer(function (inreq, res) {
 	var body = '';
 	
@@ -696,16 +674,16 @@ http.createServer(function (inreq, res) {
 
 	//Append all incoming data to 'body' which is flushed on inreq.end
     inreq.on('data', function (data) {
-		body += data;
+        body += data;
     });
 	//When the Pi is doing sending it's pidentity, send back any changes or OK
     inreq.on('end', function () {
-		var piChunk = '';
+        var piChunk = '';
 		var piDee = '';
 		console.log('Server received Pi');
 		piChunk = JSON.parse(body);
 		body = ''; //Clear the HTML Request contents for incoming requests !!Not sure if this is necessary
-		console.log(piChunk);
+        console.log(piChunk);
 		
 		//If the sent in piDee is the default -1, it needs a new piDee
 		if(piChunk.piDee == -1){
