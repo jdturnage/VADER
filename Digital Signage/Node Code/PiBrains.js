@@ -51,12 +51,10 @@ try {
     db.serialize(function() {
 		console.log('Opening Database Once Again.');
 		fs.openSync(DATABASE, 'a');
-		//create iptvTable
-		console.log("Creating iptvChannels.");
 		
-		//drop table first
+		//Clear the current iptvTable. Then create a new iptvTable
 		db.run("DROP TABLE IF EXISTS iptvTable");
-		console.log("Table dropped");
+		console.log("Creating iptvChannels.");
 		db.run("CREATE TABLE iptvTable (channel_name TEXT,ip_address TEXT)");
 		
 		//fill iptvTable...make into function later...
@@ -89,13 +87,13 @@ try {
 		db.run("INSERT INTO iptvTable(channel_name, ip_address) VALUES ('NASA Educational','udp://@239.15.15.47:30120')");
 		
 		db.each("SELECT * FROM iptvTable", function(err, row) {
-		console.log(row.channel_name + ", " + row.ip_address);
+			console.log(row.channel_name + ", " + row.ip_address);
 		});
 		console.log("Table Created");
 	});
 
 } catch (err) {
-    console.log('Error updating database, potentially a permissions issue');
+	console.log('Error updating database, potentially a permissions issue');
     console.log(err);
 }
 
@@ -408,6 +406,161 @@ function sendNotification(piip, message, duration) {
     outreq.end();
 }
 
+
+/*--------------------------------------------------------------------------------------------------	
+// emergencyOverride : 
+// Checks if Control has been enabled or not. Calls callEmergency() with the source option selected from post data. 
+//Check whether Control is enabled or not. Then check the play source selected. */
+
+function emergencyOverride()
+{
+	if (alertChunk.Control == "ON") {
+		console.log("CONTROL HAS BEEN ACTIVATED");
+		console.log("CHECKING PLAY SOURCE");
+		callEmergency(alertChunk.Source);
+	}
+	else {
+		console.log("CONTROL HAS NOT BEEN ACTIVATED");
+		console.log("Nothing will be changed");
+	}
+}
+
+
+
+/*--------------------------------------------------------------------------------------------------	
+// callEmergency : string
+// Checks the source of emergency content given from selected postData and then calls playEmergencyFolder() 
+// INPUT: emergencyCall - Source of Emergency content
+// Examples:
+//		callEmergency(alertChunk.Source) -> calls playEmergency*/
+function callEmergency(var emergencyCall) {
+    if (emergencyCall == "EMERGENCY FOLDER") {
+		playEmergencyFolder(alertChunk.Destination);
+	else if (emergencyCall == "IPTV")
+		playEmergencyIPTV(alertChunk.Destination);
+	else
+		console.log("Can't play from Emergency file source");
+	}
+}
+
+/*--------------------------------------------------------------------------------------------------	
+// playEmergencyFolder : string,
+// Passes the data as a json object to overrides.py which then handles the ExecuteAddon functionality to playEmergency
+// INPUT: emergencyDestination - Which Pi's need to play
+// Examples:
+// playEmergencyFolder(alertChunk.Destination ) -> calls playEmergency*/
+
+//Need to get the IPaddress of Pi here...
+function playEmergencyFolder()
+	var data = {
+        jsonrpc: "2.0",
+        id: "0",
+        method: "Addons.ExecuteAddon",
+        params: {
+            wait: true,
+            addonid: "service.digital.signage",
+            params: ["emergency", emergencyDestination.toString()]
+        }
+    };
+
+	dataString = JSON.stringify(data);
+	
+    var headers = {
+        "Content-Type": "application/json",
+        "Content-Length": dataString.length
+    };
+
+    var options = {
+        host: piip,
+        port: 80,
+        path: "/jsonrpc",
+        method: "POST",
+        headers: headers
+    };
+
+	//Create the outgoing request object
+    var outreq = http.request(options, function (res) {
+        res.setEncoding('utf-8');
+        var responseString = '';
+
+        res.on('data', function (data) {
+            responseString += data;
+        });
+
+        res.on('end', function () {
+            var resultObject = JSON.parse(responseString);
+        });
+    });
+
+    outreq.on('error', function (e) {
+        // TODO: handle error. 
+    });
+
+	//Write the request
+    outreq.write(dataString);
+    outreq.end();
+	}
+}
+
+/*--------------------------------------------------------------------------------------------------	
+// playEmergencyIPTV : string,
+// Passes the data as a json object to overrides.py which then handles the ExecuteAddon functionality to playIPTV
+// INPUT: emergencyDestination - Which Pi's need to play
+// Examples:
+// playEmergencyFolder(alertChunk.Destination ) -> calls playIPTV*/
+function playEmergencyIPTV(var emergencyDestination)
+	var data = {
+        jsonrpc: "2.0",
+        id: "0",
+        method: "Addons.ExecuteAddon",
+        params: {
+            wait: true,
+            addonid: "service.digital.signage",
+            params: ["iptv", emergencyDestination.toString()]
+        }
+    };
+
+	dataString = JSON.stringify(data);
+	
+    var headers = {
+        "Content-Type": "application/json",
+        "Content-Length": dataString.length
+    };
+
+    var options = {
+        host: piip,
+        port: 80,
+        path: "/jsonrpc",
+        method: "POST",
+        headers: headers
+    };
+
+	//Create the outgoing request object
+    var outreq = http.request(options, function (res) {
+        res.setEncoding('utf-8');
+        var responseString = '';
+
+        res.on('data', function (data) {
+            responseString += data;
+        });
+
+        res.on('end', function () {
+            var resultObject = JSON.parse(responseString);
+        });
+    });
+
+    outreq.on('error', function (e) {
+        // TODO: handle error. 
+    });
+
+	//Write the request
+    outreq.write(dataString);
+    outreq.end();
+	}
+}
+
+
+
 http.createServer(function (inreq, res) {
 	var body = '';
 	
@@ -447,8 +600,9 @@ http.createServer(function (inreq, res) {
 
 //Create server for webpage
 var HTMLserver=http.createServer(function(req,res){
-	console.log('Created server listening on port 8080');
+	console.log('Server listening on port 8080');
 	
+	//setup handler here
 	if (req.method=='GET')
 	{
 		var displayChannels = '';
@@ -547,8 +701,10 @@ var HTMLserver=http.createServer(function(req,res){
 			stmt2.each(function(err, row)
 			{
 				console.log(row.IP_address);
-				playEmergency(row.IP_address);
-				sourceCheck() //this line added
+				
+				emergencyOverride(piipSelect);
+				console.log("PiipSelect");
+				console.log(piipSelect);
 			});
 
 
@@ -557,3 +713,9 @@ var HTMLserver=http.createServer(function(req,res){
 		});
 	}
 }).listen(8080);
+
+
+
+
+
+
