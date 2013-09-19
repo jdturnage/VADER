@@ -51,10 +51,8 @@ try {
 //-------------------------------------------------------------------------------------------------
 // Hound Filesystem Watching
 watcher = hound.watch(MEDIA_ROOT);
-watcher.on('create',updateFolders);
-
-
-
+watcher.on('create',updateFoldersCreate);
+watcher.on('delete',updateFoldersDelete);
 try {
     db.serialize(function() {
 		console.log('Opening Database Once Again.');
@@ -105,8 +103,15 @@ try {
     console.log(err);
 }
 
-
-function updateFolders(file){
+/*--------------------------------------------------------------------------------------------------	
+// updateFoldersCreate : string
+// Adds the given file to all Pi playlists that play the folder the file is added to
+// INPUT: file - The file path of the newly created file
+// CALLS: playPi
+// Examples:
+//		updateFoldersCreate("C:\DigitalSignage\media\piFilling\Org\testing.jpg") -> Adds testing.jpg to 
+//			all Pi's piFolders that watch C:\DigitalSignage\media\piFilling\Org */
+function updateFoldersCreate(file){
 	console.log('File Created:' +file);
 	console.log('Path: '+ path.dirname(file.replace(/\//g, '\\')));
 	//Search the db for all Pi's that rely on the path of the updated file
@@ -117,24 +122,56 @@ function updateFolders(file){
 		var pathArray = file.replace(/\//g, '\\').split("\\");
 		var length = pathArray.length;
 		var piFolder = PIFOLDERS_ROOT + path.sep + row.pID + path.sep;
-		//Create a unique filename for each symlink by using the path
 		if (length > 3) {
 			filename = pathArray[length - 3] + "." + pathArray[length - 2] + "." + pathArray[length - 1];
 		} else {
 			filename = pathArray[pathArray.length - 1];
 		}
+		
 		//Add the file to the given piFolder for persistence
 		fs.symlink(file.replace(/\//g, '\\'), piFolder + filename, function (err) {
                         console.log("Trying ze link: " + piFolder + filename);
                         if (err) console.error(err.code);
-                    });
-		
-		//Inject into the Pi's Playlist for immediacy
-		//addToPlaylist(row.ipaddress, NFS_MNT_ROOT+'/piFolders/'+row.pID+'/'+filename);
+		});
+		//Tell the Pi to recollect the pictures in the piFolder/piDee folder
 		playPi(row.ipaddress);
 	});
 }
 
+/*--------------------------------------------------------------------------------------------------	
+// updateFoldersDelete : string
+// Adds the given file to all Pi playlists that play the folder the file is added to
+// INPUT: file - The file path of the newly created file
+// CALLS: playPi
+// Examples:
+//		updateFoldersDelete("C:\DigitalSignage\media\piFilling\Org\testing.jpg") -> Removes testing.jpg from all the 
+//			Pi's piFolders that depend on C:\DigitalSignage\media\piFilling\Org */
+function updateFoldersDelete(file){
+	console.log('File Deleted:' +file);
+	console.log('Path: '+ path.dirname(file.replace(/\//g, '\\')));
+	//Search the db for all Pi's that rely on the path of the updated file
+	db.each("SELECT pID, ipaddress, location, orgcode FROM Pidentities WHERE mediapath LIKE '%"+path.dirname(file.replace(/\//g, '\\'))+"%'", function(err,row){
+		console.log(row);
+		//Create "unique" filename
+		//Parse out any improper path separators **WINDOWS SPECIFIC CODE**
+		var pathArray = file.replace(/\//g, '\\').split("\\");
+		var length = pathArray.length;
+		var piFolder = PIFOLDERS_ROOT + path.sep + row.pID + path.sep;
+		if (length > 3) {
+			filename = pathArray[length - 3] + "." + pathArray[length - 2] + "." + pathArray[length - 1];
+		} else {
+			filename = pathArray[pathArray.length - 1];
+		}
+		
+		//Add the file to the given piFolder for persistence
+		fs.unlink(piFolder + filename, function (err) {
+                        console.log("Deleting " + piFolder + filename);
+                        if (err) console.error(err.code);
+		});
+		//Tell the Pi to recollect the pictures in the piFolder/piDee folder
+		playPi(row.ipaddress);
+	});
+}
 function addToPlaylist(piip, file){
 	console.log(file);
 	var data = {
@@ -477,27 +514,6 @@ function sendNotification(piip, message, duration) {
     outreq.end();
 }
 
-
-/*--------------------------------------------------------------------------------------------------	
-// emergencyOverride : string
-// Checks if Control has been enabled or not. Calls callEmergency() with the source option selected from post data. 
-// Check whether Control is enabled or not. Then check the play source selected.
-// INPUT: emergencyDestination - The piipSelect value. aka IP address.
-// Example:
-//		emergencyOverride(piipSelect) */
-
-function emergencyOverride(emergencyDestination){
-	if (alertChunk.Control == "ON") {
-		console.log("CONTROL HAS BEEN ACTIVATED");
-		console.log("CHECKING PLAY SOURCE");
-		callEmergency(alertChunk.Source, emergencyDestination);
-	}
-	else {
-		console.log("CONTROL HAS NOT BEEN ACTIVATED");
-		console.log("Nothing will be changed");
-		}
-
-}
 //--------------------------------------------------------------------------------------------------
 function updateDatabase(piDee, loc, org, piip) {
     //updating the location and orgcode in the table if it does not match the location/org in XBMC
@@ -517,7 +533,60 @@ function updateDatabase(piDee, loc, org, piip) {
     });
 }
 
+http.createServer(function (inreq, res) {
+	var body = '';
+	
+	console.log('Created server listening on port 8124');
 
+	//Append all incoming data to 'body' which is flushed on inreq.end
+    inreq.on('data', function (data) {
+        body += data;
+    });
+	//When the Pi is doing sending it's pidentity, send back any changes or OK
+    inreq.on('end', function () {
+        var piChunk = '';
+		var piDee = '';
+		console.log('Server received Pi');
+		piChunk = JSON.parse(body);
+		body = ''; //Clear the HTML Request contents for incoming requests !!Not sure if this is necessary
+        console.log(piChunk);
+		
+		//If the sent in piDee is the default -1, it needs a new piDee
+		if(piChunk.piDee == -1){
+			piDee = addNewPi(piChunk.location, piChunk.org, piChunk.piip); 
+			console.log('Wrote new piDee of '+piDee+' to Pi"');
+		} else{
+			//If the Pi is already in the database, we potentially need to update it's settings
+			updateDatabase(piChunk.piDee,piChunk.location, piChunk.org, piChunk.piip);			
+		}
+		res.writeHead(200, {
+            'Content-Type': 'application/json'
+        });
+        res.end();
+
+        
+    });
+}).listen(8124);
+
+/*--------------------------------------------------------------------------------------------------	
+// emergencyOverride : string
+// Checks if Control has been enabled or not. Calls callEmergency() with the source option selected from post data. 
+// Check whether Control is enabled or not. Then check the play source selected.
+// INPUT: emergencyDestination - The piipSelect value. aka IP address.
+// Example:
+//		emergencyOverride(piipSelect) */
+function emergencyOverride(emergencyDestination){
+	if (alertChunk.Control == "ON") {
+		console.log("CONTROL HAS BEEN ACTIVATED");
+		console.log("CHECKING PLAY SOURCE");
+		callEmergency(alertChunk.Source, emergencyDestination);
+	}
+	else {
+		console.log("CONTROL HAS NOT BEEN ACTIVATED");
+		console.log("Nothing will be changed");
+		}
+
+}
 
 /*--------------------------------------------------------------------------------------------------	
 // callEmergency : string, string
@@ -651,45 +720,6 @@ function playEmergencyIPTV(emergencyDestination) {
     outreq.end();
 }
 
-
-
-http.createServer(function (inreq, res) {
-	var body = '';
-	
-	console.log('Created server listening on port 8124');
-
-	//Append all incoming data to 'body' which is flushed on inreq.end
-    inreq.on('data', function (data) {
-        body += data;
-    });
-	//When the Pi is doing sending it's pidentity, send back any changes or OK
-    inreq.on('end', function () {
-        var piChunk = '';
-		var piDee = '';
-		console.log('Server received Pi');
-		piChunk = JSON.parse(body);
-		body = ''; //Clear the HTML Request contents for incoming requests !!Not sure if this is necessary
-        console.log(piChunk);
-		
-		//If the sent in piDee is the default -1, it needs a new piDee
-		if(piChunk.piDee == -1){
-			piDee = addNewPi(piChunk.location, piChunk.org, piChunk.piip); 
-			console.log('Wrote new piDee of '+piDee+' to Pi"');
-		} else{
-			//If the Pi is already in the database, we potentially need to update it's settings
-			updateDatabase(piChunk.piDee,piChunk.location, piChunk.org, piChunk.piip);			
-		}
-		res.writeHead(200, {
-            'Content-Type': 'application/json'
-        });
-        res.end();
-
-        
-    });
-}).listen(8124);
-
-
-
 //Create server for webpage
 var HTMLserver=http.createServer(function(req,res){
 	console.log('Server listening on port 8080');
@@ -804,7 +834,7 @@ var HTMLserver=http.createServer(function(req,res){
 
 		});
 	}
-}).listen(8080);
+}).listen(80);
 
 
 
