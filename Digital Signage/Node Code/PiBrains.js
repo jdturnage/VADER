@@ -562,11 +562,10 @@ http.createServer(function (inreq, res) {
 		res.writeHead(200, {
             'Content-Type': 'application/json'
         });
-        res.end();
-
-        
+        res.end();        
     });
 }).listen(8124);
+
 
 /*--------------------------------------------------------------------------------------------------	
 // emergencyOverride : string
@@ -575,18 +574,21 @@ http.createServer(function (inreq, res) {
 // INPUT: emergencyDestination - The piipSelect value. aka IP address.
 // Example:
 //		emergencyOverride(piipSelect) */
-function emergencyOverride(emergencyDestination){
+function emergencyOverride(emergencyDestination)
+{
 	if (alertChunk.Control == "ON") {
-		console.log("CONTROL HAS BEEN ACTIVATED");
-		console.log("CHECKING PLAY SOURCE");
+		console.log("EMERGENCY OVERRIDE HAS BEEN ACTIVATED");
 		callEmergency(alertChunk.Source, emergencyDestination);
 	}
+	else if (alertChunk.Control =="OFF"){
+		console.log("EMERGENCY OVERRIDE HAS BEEN DISABLED");
+		playPi(emergencyDestination);		
+	}
 	else {
-		console.log("CONTROL HAS NOT BEEN ACTIVATED");
-		console.log("Nothing will be changed");
-		}
-
+		console.log("ERROR! CAPTAIN MURPHY IS MIA FROM THE GREAT SPICE WARS!");
+	}
 }
+
 
 /*--------------------------------------------------------------------------------------------------	
 // callEmergency : string, string
@@ -634,7 +636,7 @@ function playEmergencyFolder(emergencyDestination) {
     };
 
     var options = {
-        host: piip,
+		host: emergencyDestination,
         port: 80,
         path: "/jsonrpc",
         method: "POST",
@@ -665,7 +667,7 @@ function playEmergencyFolder(emergencyDestination) {
 }
 
 /*--------------------------------------------------------------------------------------------------	
-// playEmergencyFolder : string
+// playEmergencyIPTV : string
 // Passes the data as a json object to overrides.py which then handles the ExecuteAddon functionality to playEmergency
 // INPUT: emergencyDestination - IPaddress of Pi's needing to be played
 // Examples:
@@ -690,7 +692,7 @@ function playEmergencyIPTV(emergencyDestination) {
     };
 
     var options = {
-        host: piip,
+        host: emergencyDestination,
         port: 80,
         path: "/jsonrpc",
         method: "POST",
@@ -736,7 +738,7 @@ var HTMLserver=http.createServer(function(req,res){
 
 		//Creates a checkbox for each piDee
 		stmt.each(function(err, row){
-			checkNames += '<input type="checkbox" name="Destination" value="'+row.piDee+'">'+ row.Location + ', '+ row.Orgcode +'<br>'
+			checkNames += '<input type="checkbox" name="Destination" value="'+row.pID+'">'+ row.location + ', '+ row.orgcode +'<br>'
 		});
 
 		//Displays the channel name/ip_address
@@ -765,7 +767,7 @@ var HTMLserver=http.createServer(function(req,res){
 						</head> \
 						<body bgcolor="#E6E6FA"> \
 							<form action="/" method="POST" name="form1"> \
-								<b>TOGGLE CONTROL</b> \
+								<b>EMERGENCY OVERRIDE</b> \
 								<input type="radio" name="Control" value="ON">ON \
 								<input type="radio" name="Control" value="OFF" checked>OFF <br> <br>\
 								<b>Select the Source of Notification</b> <br> <br> \
@@ -802,31 +804,24 @@ var HTMLserver=http.createServer(function(req,res){
 			alertChunk = querystring.parse(alert);
 			console.log(alertChunk.Destination);
 
-
-			//Print out to confirm output.
-			console.log(alertChunk.Control);
-			console.log(alertChunk.Source);
-			console.log(alertChunk.Channels);
-
-			var piipSelect = "SELECT IP_Address FROM Pidentities WHERE ";
+			var piipSelect = "SELECT ipaddress FROM Pidentities WHERE ";
 			alertChunk.Destination.forEach(function(currentIterationOfLoop)
 			{
 				piipSelect += "rowid = " + currentIterationOfLoop + " OR ";
 			});
 			console.log(piipSelect);
 			piipSelect = S(piipSelect).chompRight(" OR ").s;
-			console.log(piipSelect);
-			
 			
 			
 			var stmt2= db.prepare(piipSelect);
 			stmt2.each(function(err, row)
 			{
-				console.log(row.IP_address);
-				
-				emergencyOverride(piipSelect);
-				console.log("PiipSelect");
-				console.log(piipSelect);
+				console.log(row.ipaddress);
+			
+				console.log("CALLING EMERGENCY OVERRIDE");
+				emergencyOverride(row.ipaddress);
+				//emergencyOverride(piipSelect);
+				console.log("EMERGENCY OVERRIDE COMPLETE");
 			});
 
 
