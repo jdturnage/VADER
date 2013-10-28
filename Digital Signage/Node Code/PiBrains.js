@@ -604,6 +604,7 @@ function callEmergency(emergencyCall, emergencyDestination) {
 		playEmergencyFolder(emergencyDestination);
 	}
 	else if (emergencyCall == "IPTV") {
+		console.log("CALLING IPTV");
 		playEmergencyIPTV(emergencyDestination);
 	}
 	else {
@@ -675,6 +676,7 @@ function playEmergencyFolder(emergencyDestination) {
 // Examples:
 // 		playEmergencyIPTV(emergencyDestination) -> calls playIPTV*/
 function playEmergencyIPTV(emergencyDestination) {
+	console.log("In IPTV function call");
 	var data = {
         jsonrpc: "2.0",
         id: "0",

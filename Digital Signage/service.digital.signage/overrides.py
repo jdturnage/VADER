@@ -51,6 +51,8 @@ def playEmergency(args):
 	xbmc.executebuiltin("Action(Play)")
 def playIPTV(args):
 	xbmc.log("IPTV playing")
+	xbmc.executebuiltin('ActivateWindow(Pictures,"udp://@139.169.8.145:1234")');
+	xbmc.executebuiltin("Action(Play)")
 
 #Standard setup of main
 if (__name__ == "__main__"):
